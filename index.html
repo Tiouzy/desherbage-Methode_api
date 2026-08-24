@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Désherbage API — Bib'INSA</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --ink-2: #555;
+    --ink-3: #888;
+    --paper: #faf9f6;
+    --card: #ffffff;
+    --border: #e2e0d8;
+    --border-2: #ccc8be;
+    --accent: #1a4f7a;
+    --accent-light: #e8f0f8;
+    --danger: #b83c2b;
+    --danger-bg: #fdf0ee;
+    --warn: #8a5c00;
+    --warn-bg: #fef8ec;
+    --ok: #2a6636;
+    --ok-bg: #edf7f0;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,.07), 0 4px 12px rgba(0,0,0,.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── En-tête ── */
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 1.5rem 2rem 1.25rem;
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-family: 'Georgia', serif;
+    font-size: 1.25rem;
+    font-weight: normal;
+    letter-spacing: .01em;
+  }
+  header .sub {
+    font-family: 'Arial', sans-serif;
+    font-size: .78rem;
+    opacity: .72;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  /* ── Layout ── */
+  .container { max-width: 820px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  /* ── Zone de saisie ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .card-title {
+    font-family: 'Arial', sans-serif;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 1rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  label {
+    display: block;
+    font-family: 'Arial', sans-serif;
+    font-size: .8rem;
+    color: var(--ink-2);
+    margin-bottom: .3rem;
+    margin-top: .9rem;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  textarea, input[type=text], input[type=number] {
+    width: 100%;
+    font-family: 'Arial', sans-serif;
+    font-size: .9rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--border-2);
+    border-radius: 5px;
+    padding: .55rem .75rem;
+    transition: border-color .15s;
+    outline: none;
+  }
+  textarea { resize: vertical; min-height: 58px; }
+  textarea:focus, input:focus {
+    border-color: var(--accent);
+    background: #fff;
+  }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  @media (max-width: 560px) {
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+  }
+
+  /* ── Bouton ── */
+  button.analyse {
+    margin-top: 1.25rem;
+    width: 100%;
+    padding: .75rem 1rem;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Arial', sans-serif;
+    font-size: .95rem;
+    font-weight: 600;
+    letter-spacing: .02em;
+    cursor: pointer;
+    transition: background .15s, transform .08s;
+  }
+  button.analyse:hover { background: #163e62; }
+  button.analyse:active { transform: scale(.98); }
+
+  /* ── Résultat ── */
+  #result { display: none; }
+
+  .titre-ouvrage {
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--ink);
+    margin-bottom: .25rem;
+    line-height: 1.4;
+  }
+  .meta-ouvrage {
+    font-family: 'Arial', sans-serif;
+    font-size: .8rem;
+    color: var(--ink-3);
+    margin-bottom: 1.25rem;
+  }
+
+  /* Critères */
+  .criteres { display: flex; flex-direction: column; gap: .75rem; margin-bottom: 1.25rem; }
+  .critere {
+    display: flex;
+    align-items: flex-start;
+    gap: .9rem;
+    padding: .85rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--paper);
+  }
+  .badge {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Arial', sans-serif;
+    font-size: .85rem;
+    font-weight: 700;
+  }
+  .badge-3 { background: var(--danger-bg); color: var(--danger); }
+  .badge-2 { background: #fde8e5; color: var(--danger); }
+  .badge-1 { background: var(--warn-bg); color: var(--warn); }
+  .badge-0 { background: var(--ok-bg); color: var(--ok); }
+  .badge-q { background: #f0f0f0; color: var(--ink-2); }
+
+  .critere-body { flex: 1; }
+  .critere-titre {
+    font-family: 'Arial', sans-serif;
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: .2rem;
+  }
+  .critere-detail {
+    font-family: 'Arial', sans-serif;
+    font-size: .8rem;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+
+  /* Valeur patrimoniale */
+  .patri {
+    border: 1px solid #b8d0e8;
+    background: var(--accent-light);
+    border-radius: var(--radius);
+    padding: .75rem 1rem;
+    font-family: 'Arial', sans-serif;
+    font-size: .82rem;
+    color: var(--accent);
+    margin-bottom: 1.25rem;
+    line-height: 1.5;
+  }
+  .patri strong { font-weight: 700; }
+
+  /* Recommandation */
+  .reco {
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    font-family: 'Arial', sans-serif;
+    font-size: .95rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+  .reco-desherb { background: var(--danger-bg); color: var(--danger); border: 1px solid #e8bcb6; }
+  .reco-verif   { background: var(--warn-bg);   color: var(--warn);   border: 1px solid #e8d8a0; }
+  .reco-garde   { background: var(--ok-bg);     color: var(--ok);     border: 1px solid #a8d4b4; }
+
+  /* Aide / légende */
+  details {
+    margin-top: 2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+  }
+  summary {
+    font-family: 'Arial', sans-serif;
+    font-size: .82rem;
+    color: var(--ink-2);
+    cursor: pointer;
+    padding: .75rem 1rem;
+    list-style: none;
+    user-select: none;
+  }
+  summary::before { content: '▸ '; }
+  details[open] summary::before { content: '▾ '; }
+  .aide-body {
+    padding: .5rem 1rem 1rem;
+    border-top: 1px solid var(--border);
+    font-family: 'Arial', sans-serif;
+    font-size: .82rem;
+    color: var(--ink-2);
+    line-height: 1.7;
+  }
+  .aide-body h4 {
+    font-size: .8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink-3);
+    margin: 1rem 0 .4rem;
+  }
+  table.seuils {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .8rem;
+    margin-top: .5rem;
+  }
+  table.seuils th {
+    text-align: left;
+    padding: .3rem .5rem;
+    background: var(--paper);
+    font-weight: 700;
+    border-bottom: 1px solid var(--border);
+  }
+  table.seuils td {
+    padding: .3rem .5rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    font-family: 'Arial', sans-serif;
+    font-size: .75rem;
+    color: var(--ink-3);
+    padding: 2rem 1rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e8e6de;
+      --ink-2: #aaa8a0;
+      --ink-3: #777570;
+      --paper: #1c1b18;
+      --card: #242320;
+      --border: #38362e;
+      --border-2: #4a4840;
+      --accent-light: #1a2e40;
+    }
+    textarea, input[type=text], input[type=number] { background: #1c1b18; color: var(--ink); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Outil de désherbage — méthode API</h1>
+  <span class="sub">Bib'INSA Toulouse · Architecture</span>
+</header>
+
+<div class="container">
+
+  <!-- Saisie -->
+  <div class="card">
+    <div class="card-title">Données de l'ouvrage</div>
+
+    <label for="raw">Coller depuis le tableur (copier-coller une ligne)</label>
+    <textarea id="raw" placeholder="7AA&#9;Titre de l'ouvrage&#9;Auteur&#9;Éditeur&#9;code-barre&#9;2005&#9;720.47 LEF&#9;Plus de 20 ans&#9;Plus de 20 ans&#9;12&#9;0" rows="3"></textarea>
+
+    <div style="font-family:Arial,sans-serif;font-size:.78rem;color:var(--ink-3);margin:.6rem 0 .9rem;text-align:center;">— ou saisir manuellement —</div>
+
+    <label for="titre">Titre</label>
+    <input type="text" id="titre" placeholder="Titre de l'ouvrage">
+
+    <div class="grid2">
+      <div>
+        <label for="auteur">Auteur</label>
+        <input type="text" id="auteur" placeholder="Nom, Prénom">
+      </div>
+      <div>
+        <label for="editeur">Éditeur</label>
+        <input type="text" id="editeur" placeholder="Éditeur">
+      </div>
+    </div>
+
+    <div class="grid3">
+      <div>
+        <label for="annee">Année de publication</label>
+        <input type="number" id="annee" placeholder="2005" min="1800" max="2030">
+      </div>
+      <div>
+        <label for="prets_avant">Prêts avant Alma</label>
+        <input type="number" id="prets_avant" placeholder="0" min="0">
+      </div>
+      <div>
+        <label for="prets_depuis">Prêts depuis Alma (~2018)</label>
+        <input type="number" id="prets_depuis" placeholder="0" min="0">
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <label for="cote">Cote Dewey</label>
+        <input type="text" id="cote" placeholder="720.47 LEF">
+      </div>
+      <div>
+        <label for="sudoc">Exemplaires dans le SUDOC</label>
+        <input type="number" id="sudoc" placeholder="laisser vide si inconnu" min="0">
+      </div>
+    </div>
+
+    <button class="analyse" onclick="analyser()">Analyser cet ouvrage</button>
+  </div>
+
+  <!-- Résultat -->
+  <div class="card" id="result">
+    <div class="card-title">Analyse API</div>
+    <div class="titre-ouvrage" id="r-titre"></div>
+    <div class="meta-ouvrage" id="r-meta"></div>
+    <div class="criteres" id="r-criteres"></div>
+    <div id="r-patri"></div>
+    <div class="reco" id="r-reco"></div>
+  </div>
+
+  <!-- Aide -->
+  <details>
+    <summary>Aide — méthode API et seuils par discipline</summary>
+    <div class="aide-body">
+      <p>La méthode API évalue trois critères indépendants. Un seul critère validé peut suffire à justifier le désherbage selon le contexte.</p>
+      <h4>A — Abîmé</h4>
+      <p>État physique : reliure cassée, pages déchirées, taches, moisissures, annotations intrusives. À évaluer manuellement en main.</p>
+      <h4>P — Périmé</h4>
+      <p>Score calculé en croisant l'âge du document avec sa discipline (cote Dewey). Les seuils varient fortement selon le domaine :</p>
+      <table class="seuils">
+        <tr><th>Discipline</th><th>Seuil modéré</th><th>Seuil fort</th><th>Seuil très fort</th></tr>
+        <tr><td>Architecture durable / énergie (720.47)</td><td>7 ans</td><td>12 ans</td><td>18 ans</td></tr>
+        <tr><td>Construction / matériaux (721)</td><td>10 ans</td><td>15 ans</td><td>22 ans</td></tr>
+        <tr><td>Équipements spécialisés (725)</td><td>10 ans</td><td>15 ans</td><td>22 ans</td></tr>
+        <tr><td>Urbanisme / ville (711)</td><td>10 ans</td><td>18 ans</td><td>25 ans</td></tr>
+        <tr><td>Paysage (712)</td><td>12 ans</td><td>20 ans</td><td>28 ans</td></tr>
+        <tr><td>Architecture générale / théorie (720)</td><td>12 ans</td><td>20 ans</td><td>28 ans</td></tr>
+        <tr><td>Architecture contemporaine (724)</td><td>15 ans</td><td>25 ans</td><td>35 ans</td></tr>
+        <tr><td>Habitat / logement (728)</td><td>12 ans</td><td>20 ans</td><td>28 ans</td></tr>
+        <tr><td>Histoire / patrimoine (722, 726)</td><td>20 ans</td><td>35 ans</td><td>50 ans</td></tr>
+        <tr><td>Biographie d'architecte (720.9, 720.92)</td><td>20 ans</td><td>35 ans</td><td>50 ans</td></tr>
+      </table>
+      <h4>I — Inadéquat</h4>
+      <p>Basé sur les prêts : 0 prêt toutes périodes = score 3 · 0 prêt depuis Alma avec peu de prêts historiques = score 2 · 0 prêt depuis Alma avec usage historique = score 1 · prêts récents = score 0.</p>
+      <h4>Valeur patrimoniale</h4>
+      <p>Signaux détectés automatiquement (lien INSA Toulouse, éditeur confidentiel, rareté Archires). Le SUDOC est le critère décisif : moins de 15 exemplaires = fort signal patrimonial, plus de 30 = désherbage probable même si les critères API sont activés.</p>
+      <h4>Score</h4>
+      <p>0 = critère non rempli (vert) · 1 = possiblement (jaune) · 2 = probablement (orange) · 3 = très probablement (rouge)</p>
+    </div>
+  </details>
+
+</div>
+
+<footer>Bib'INSA Toulouse · Outil interne de désherbage — méthode API · Architecture &amp; Magasin</footer>
+
+<script>
+const DISCIPLINES = {
+  '720.92': { nom: "Biographie d'architecte",     seuils: [20,35,50] },
+  '720.9':  { nom: "Biographie d'architecte",     seuils: [20,35,50] },
+  '720.47': { nom: 'Architecture durable / énergie', seuils: [7,12,18] },
+  '722':    { nom: 'Histoire / patrimoine',        seuils: [20,35,50] },
+  '724':    { nom: 'Architecture contemporaine',   seuils: [15,25,35] },
+  '725':    { nom: 'Équipements spécialisés',      seuils: [10,15,22] },
+  '726':    { nom: 'Histoire / patrimoine',        seuils: [20,35,50] },
+  '728':    { nom: 'Habitat / logement',           seuils: [12,20,28] },
+  '712':    { nom: 'Paysage',                      seuils: [12,20,28] },
+  '720':    { nom: 'Architecture générale / théorie', seuils: [12,20,28] },
+  '721':    { nom: 'Construction / matériaux',     seuils: [10,15,22] },
+  '711':    { nom: 'Urbanisme / ville',             seuils: [10,18,25] },
+};
+
+function getDiscipline(cote) {
+  if (!cote) return { nom: 'Non renseignée', seuils: [12,20,28] };
+  const c = cote.trim();
+  const ordre = ['720.92','720.9','720.47','722','724','725','726','728','712','720','721','711'];
+  for (const k of ordre) { if (c.startsWith(k)) return { key:k, ...DISCIPLINES[k] }; }
+  return { nom: 'Général', seuils: [12,20,28] };
+}
+
+function parseRaw(txt) {
+  const cols = txt.split(/\t/);
+  if (cols.length < 4) return;
+  let o = 0;
+  if (cols[0] && cols[0].length < 8 && /[A-Z0-9]{2,5}/.test(cols[0].trim())) o = 1;
+  const get = i => (cols[o+i] || '').trim();
+  if (get(0)) document.getElementById('titre').value = get(0);
+  if (get(1)) document.getElementById('auteur').value = get(1);
+  if (get(2)) document.getElementById('editeur').value = get(2);
+  const anneeMatch = (get(4)||'').match(/\d{4}/);
+  if (anneeMatch) document.getElementById('annee').value = anneeMatch[0];
+  if (get(5)) document.getElementById('cote').value = get(5);
+  const pa = (get(7)||get(8)||'').replace(/[^\d]/g,'');
+  const pd = (get(8)||get(9)||'').replace(/[^\d]/g,'');
+  if (pa) document.getElementById('prets_avant').value = pa;
+  if (pd) document.getElementById('prets_depuis').value = pd;
+}
+
+document.getElementById('raw').addEventListener('change', function() {
+  if (this.value.trim()) parseRaw(this.value.trim());
+});
+document.getElementById('raw').addEventListener('paste', function() {
+  setTimeout(() => { if (this.value.trim()) parseRaw(this.value.trim()); }, 50);
+});
+
+function scoreP(annee, disc) {
+  if (!annee) return { score: null, detail: 'Année non renseignée' };
+  const age = 2026 - annee;
+  const [s1,s2,s3] = disc.seuils;
+  if (age >= s3) return { score:3, detail:`${age} ans — très au-delà du seuil critique (${s3} ans) pour ce domaine` };
+  if (age >= s2) return { score:2, detail:`${age} ans — dépasse le seuil fort (${s2} ans)` };
+  if (age >= s1) return { score:1, detail:`${age} ans — dépasse le seuil modéré (${s1} ans)` };
+  return { score:0, detail:`${age} ans — récent pour ce domaine (seuil : ${s1} ans)` };
+}
+
+function scoreI(pa, pd) {
+  const total = pa + pd;
+  if (total === 0) return { score:3, detail:'0 prêt toutes périodes confondues' };
+  if (pd === 0 && total <= 3) return { score:2, detail:`${total} prêt(s) uniquement avant Alma, aucun depuis 2018` };
+  if (pd === 0) return { score:1, detail:`${total} prêts avant Alma, 0 depuis 2018 — usage éteint` };
+  if (pd === 1 && total <= 5) return { score:1, detail:`Usage très faible : 1 seul prêt depuis Alma` };
+  return { score:0, detail:`${pd} prêt(s) depuis Alma — usage récent` };
+}
+
+function scorePatri(editeur, auteur, sudoc) {
+  const ed = (editeur||'').toLowerCase();
+  const au = (auteur||'').toLowerCase();
+  const signaux = [];
+
+  if (/insa|institut national des sciences appliqu/i.test(au+ed)) signaux.push('Lien INSA Toulouse détecté');
+  else if (/toulouse|cépaduès|lmdc/i.test(au+ed)) signaux.push('Lien Toulouse probable');
+
+  const rares = /lcpc|laboratoire central des ponts|vetter|sebtp|aicvf|cticm|c\.t\.i|ctba|brissaud|librairie polytechnique béranger|plan construction|ici interface|s\.c\.m/i;
+  const institutionnels = /cstb|cated|sétra|setra|certu|cimbéton|cimb|afnor|ademe|aqc|presses de l.école nationale des ponts|cerema/i;
+  const communs = /eyrolles|dunod|masson|le moniteur|presses universitaires|hachette|armand colin|la découverte|seuil|mcgraw|wiley|thames|mit press|springer|birkhäuser|actes sud|l.harmattan|hermes science|lavoisier|citadelles/i;
+  const archires = /archives d.architecture moderne|éditions de la villette|éditions du linteau|archibooks|parenthèses|l.oeil d.or|norma|champ vallon|éditions de l.aube|vinci textuel|instant durable/i;
+
+  if (rares.test(ed)) signaux.push('Éditeur très confidentiel — hors réseau BU probable');
+  else if (archires.test(ed)) signaux.push('Éditeur rare dans Archires');
+  else if (institutionnels.test(ed)) signaux.push('Éditeur institutionnel spécialisé');
+  else if (!communs.test(ed) && ed) signaux.push('Éditeur peu répandu en BU');
+
+  let note = '';
+  if (sudoc !== '' && sudoc !== null) {
+    const n = parseInt(sudoc);
+    if (n <= 5)       note = `Très rare dans le SUDOC (${n} ex.) — signal patrimonial fort`;
+    else if (n <= 15) note = `Peu diffusé dans le SUDOC (${n} ex.) — à vérifier dans Archires`;
+    else if (n <= 30) note = `Diffusion modérée (${n} ex. SUDOC) — vérifier Archires`;
+    else              note = `Bien diffusé dans le SUDOC (${n} ex.) — valeur rareté faible`;
+  }
+  return { signaux, note };
+}
+
+function badgeClass(s) {
+  if (s === null) return 'badge-q';
+  return ['badge-0','badge-1','badge-2','badge-3'][Math.min(s,3)];
+}
+function badgeLabel(s) { return s === null ? '?' : String(s); }
+
+function analyser() {
+  const raw = document.getElementById('raw').value.trim();
+  if (raw) parseRaw(raw);
+
+  const titre   = document.getElementById('titre').value.trim();
+  const auteur  = document.getElementById('auteur').value.trim();
+  const editeur = document.getElementById('editeur').value.trim();
+  const annee   = parseInt(document.getElementById('annee').value) || null;
+  const pa      = parseInt(document.getElementById('prets_avant').value) || 0;
+  const pd      = parseInt(document.getElementById('prets_depuis').value) || 0;
+  const cote    = document.getElementById('cote').value.trim();
+  const sudoc   = document.getElementById('sudoc').value.trim();
+
+  const disc = getDiscipline(cote);
+  const rP   = scoreP(annee, disc);
+  const rI   = scoreI(pa, pd);
+  const rPat = scorePatri(editeur, auteur, sudoc);
+
+  const sudocN = sudoc !== '' ? parseInt(sudoc) : null;
+  const critValides2 = [rP.score >= 2, rI.score >= 2].filter(Boolean).length;
+  const critPresents = [rP.score >= 1, rI.score >= 1].filter(Boolean).length;
+  const hasPatri = rPat.signaux.length > 0;
+  const sudocRare = sudocN !== null && sudocN <= 15;
+  const sudocEleve = sudocN !== null && sudocN > 30;
+
+  let reco, recoClass;
+  if (critValides2 >= 2 && (!hasPatri || sudocEleve)) {
+    reco = 'Désherbage recommandé';
+    recoClass = 'reco-desherb';
+  } else if (critValides2 >= 2 && sudocRare) {
+    reco = 'Désherbage probable — SUDOC rare : vérifier dans Archires avant décision finale';
+    recoClass = 'reco-verif';
+  } else if (critValides2 >= 2 && !sudocN && hasPatri) {
+    reco = 'Critères API activés — vérifier le SUDOC / Archires avant de décider';
+    recoClass = 'reco-verif';
+  } else if (critPresents >= 1) {
+    reco = 'À surveiller — examen approfondi conseillé';
+    recoClass = 'reco-verif';
+  } else {
+    reco = 'À conserver';
+    recoClass = 'reco-garde';
+  }
+
+  document.getElementById('r-titre').textContent = titre || '(titre non renseigné)';
+  const metaParts = [auteur, editeur, annee ? String(annee) : '', cote].filter(Boolean);
+  document.getElementById('r-meta').textContent = metaParts.join(' · ');
+
+  document.getElementById('r-criteres').innerHTML = `
+    <div class="critere">
+      <div class="badge ${badgeClass(rP.score)}">${badgeLabel(rP.score)}</div>
+      <div class="critere-body">
+        <div class="critere-titre">P — Périmé · ${disc.nom}</div>
+        <div class="critere-detail">${rP.detail}</div>
+      </div>
+    </div>
+    <div class="critere">
+      <div class="badge ${badgeClass(rI.score)}">${badgeLabel(rI.score)}</div>
+      <div class="critere-body">
+        <div class="critere-titre">I — Inadéquat (usage)</div>
+        <div class="critere-detail">${rI.detail}</div>
+      </div>
+    </div>
+    <div class="critere">
+      <div class="badge badge-q">A</div>
+      <div class="critere-body">
+        <div class="critere-titre">A — Abîmé</div>
+        <div class="critere-detail">À vérifier physiquement en main</div>
+      </div>
+    </div>`;
+
+  const patriParts = [...rPat.signaux, rPat.note].filter(Boolean);
+  document.getElementById('r-patri').innerHTML = patriParts.length
+    ? `<div class="patri"><strong>Valeur patrimoniale :</strong> ${patriParts.join(' · ')}</div>`
+    : '';
+
+  document.getElementById('r-reco').textContent = reco;
+  document.getElementById('r-reco').className = 'reco ' + recoClass;
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+</body>
+</html>
